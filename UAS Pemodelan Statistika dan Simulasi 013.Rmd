@@ -1,0 +1,1065 @@
+---
+title: "UAS Pemodelan Statistika dan Simulasi"
+author: "pradytha galuh"
+date: "2025-06-20"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+# Load library yang diperlukan
+library(ggplot2)
+library(dplyr)
+library(knitr)
+
+# Set seed untuk reproducibility
+set.seed(123)
+```
+
+## 1. Gunakan simulasi untuk menghitung nilai pendekatan dari $\mathbb{E}[X^2]$ untuk variabel random berdistribusi Uniform jika $X \sim U(0, 1)$. Gunakan 10.000 angka random.
+
+```{r}
+# Parameter simulasi
+n_sim <- 10000
+
+# Generate 10.000 angka random dari distribusi Uniform(0,1)
+x_uniform <- runif(n_sim, min = 0, max = 1)
+
+# Hitung X²
+x_squared <- x_uniform^2
+
+# Hitung E[X²] dari simulasi
+e_x_squared_sim <- mean(x_squared)
+
+# Nilai teoritis E[X²] untuk U(0,1)
+# E[X²] = ∫₀¹ x² dx = [x³/3]₀¹ = 1/3
+e_x_squared_theory <- 1/3
+```
+
+```{r}
+# Tampilkan hasil
+cat("HASIL SIMULASI E[X²]:\n")
+cat("- Nilai simulasi     :", round(e_x_squared_sim, 6), "\n")
+cat("- Nilai teoritis     :", round(e_x_squared_theory, 6), "\n")
+cat("- Selisih           :", round(abs(e_x_squared_sim - e_x_squared_theory), 6), "\n")
+cat("- Akurasi (%)       :", round((1 - abs(e_x_squared_sim - e_x_squared_theory)/e_x_squared_theory) * 100, 2), "%\n")
+```
+```{r}
+# Plot histogram X²
+hist(x_squared, breaks = 50, 
+     main = "Histogram X² untuk X ~ U(0,1)", 
+     xlab = "X²", ylab = "Frekuensi",
+     col = "cyan3", border = "black")
+abline(v = e_x_squared_sim, col = "red", lwd = 2, lty = 2)
+legend("topright", 
+       legend = paste("E[X²] =", round(e_x_squared_sim, 4)), 
+       col = "red", lty = 2, lwd = 2)
+```
+
+## 2. Buat masing-masing untuk $n_1 = 100$, $n_2 = 1000$, dan $n_3 = 10000$ angka random dari $N(100, 15^2)$, lalu hitung rata-rata, simpangan baku, dan plot histogram. Berikan penjelasan hasil yang Saudara peroleh.
+
+```{r}
+# Parameter distribusi
+mu <- 100
+sigma <- 15
+sample_sizes <- c(100, 1000, 10000)
+
+# Inisialisasi tabel hasil
+results_normal <- data.frame(
+  n = sample_sizes,
+  mean_sample = numeric(3),
+  sd_sample = numeric(3),
+  se_mean = numeric(3),
+  error_mean = numeric(3),
+  error_sd = numeric(3)
+)
+```
+
+```{r}
+# Set layout untuk plot
+par(mfrow = c(2, 2))
+
+for(i in 1:length(sample_sizes)) {
+  n <- sample_sizes[i]
+  
+  # Generate sampel
+  sample_data <- rnorm(n, mean = mu, sd = sigma)
+  
+  # Hitung statistik
+  sample_mean <- mean(sample_data)
+  sample_sd <- sd(sample_data)
+  se_mean <- sample_sd / sqrt(n)
+  
+  # Hitung error dari nilai teoritis
+  error_mean <- abs(sample_mean - mu)
+  error_sd <- abs(sample_sd - sigma)
+  
+  # Simpan hasil
+  results_normal[i, "mean_sample"] <- sample_mean
+  results_normal[i, "sd_sample"] <- sample_sd
+  results_normal[i, "se_mean"] <- se_mean
+  results_normal[i, "error_mean"] <- error_mean
+  results_normal[i, "error_sd"] <- error_sd
+  
+  # Plot histogram
+  hist(sample_data, breaks = 30, 
+       main = paste("N(100,15²) dengan n =", n),
+       xlab = "Nilai", ylab = "Frekuensi",
+       col = "darkturquoise", border = "black")
+  abline(v = sample_mean, col = "red", lwd = 2)
+  abline(v = mu, col = "blue", lwd = 2, lty = 2)
+  legend("topright", 
+         legend = c(paste("x̄ =", round(sample_mean, 2)), 
+                   paste("μ =", mu)),
+         col = c("red", "blue"), lty = c(1, 2), lwd = 2)
+}
+
+par(mfrow = c(1, 1))
+```
+
+```{r}
+# Tampilkan tabel hasil
+cat("RINGKASAN HASIL SIMULASI NORMAL:\n")
+print(kable(results_normal, digits = 4, 
+           col.names = c("n", "x̄", "s", "SE(x̄)", "Error x̄", "Error s")))
+
+cat("\nANALISIS LAW OF LARGE NUMBERS:\n")
+for(i in 1:3) {
+  cat("- n =", sample_sizes[i], 
+      ": Error rata-rata =", round(results_normal[i, "error_mean"], 4),
+      ", Error SD =", round(results_normal[i, "error_sd"], 4), "\n")
+}
+```
+
+## 3. Simulasikan distribusi binomial $\text{Bin}(30, 0{,}25)$ sebanyak 5000 kali. Tentukan nilai estimasi masukan $P(X \geq 15)$.
+
+```{r}
+# Parameter distribusi binomial
+n_trials <- 30
+prob_success <- 0.25
+n_simulations <- 5000
+
+# Generate sampel dari distribusi binomial
+binomial_samples <- rbinom(n_simulations, size = n_trials, prob = prob_success)
+```
+
+```{r}
+# Simulasi distribusi Binomial Bin(30, 0.25)
+n_trials <- 30
+prob_success <- 0.25
+n_simulations <- 5000
+
+# Generate sampel dari distribusi binomial
+binomial_samples <- rbinom(n_simulations, size = n_trials, prob = prob_success)
+
+# Hitung P(X ≥ 15) dari simulasi
+prob_x_geq_15_sim <- mean(binomial_samples >= 15)
+
+# Hitung nilai teoritis P(X ≥ 15)
+prob_x_geq_15_theory <- 1 - pbinom(14, size = n_trials, prob = prob_success)
+
+# Statistik deskriptif
+mean_binomial <- mean(binomial_samples)
+var_binomial <- var(binomial_samples)
+sd_binomial <- sd(binomial_samples)
+
+# Nilai teoritis
+mean_theory <- n_trials * prob_success
+var_theory <- n_trials * prob_success * (1 - prob_success)
+
+cat("Hasil Simulasi Distribusi Binomial Bin(30, 0.25):\n")
+cat("Jumlah simulasi:", n_simulations, "\n\n")
+
+cat("Statistik Sampel:\n")
+cat("Rata-rata:", round(mean_binomial, 4), "(Teoritis:", mean_theory, ")\n")
+cat("Varians:", round(var_binomial, 4), "(Teoritis:", round(var_theory, 4), ")\n")
+cat("Simpangan baku:", round(sd_binomial, 4), "(Teoritis:", round(sqrt(var_theory), 4), ")\n\n")
+
+cat("Estimasi Probabilitas:\n")
+cat("P(X ≥ 15) simulasi:", round(prob_x_geq_15_sim, 6), "\n")
+cat("P(X ≥ 15) teoritis:", round(prob_x_geq_15_theory, 6), "\n")
+cat("Selisih:", round(abs(prob_x_geq_15_sim - prob_x_geq_15_theory), 6), "\n")
+
+# Plot histogram
+hist(binomial_samples, breaks = 0:30, 
+     main = "Histogram Distribusi Binomial Bin(30, 0.25)",
+     xlab = "Nilai X", ylab = "Frekuensi",
+     col = "darkmagenta", border = "black")
+abline(v = 15, col = "red", lwd = 2, lty = 2)
+abline(v = mean_binomial, col = "blue", lwd = 2)
+legend("topright", 
+       legend = c("X = 15", paste("x̄ =", round(mean_binomial, 2))),
+       col = c("red", "blue"), lty = c(2, 1), lwd = 2)
+
+# Tabel probabilitas untuk beberapa nilai
+prob_table <- data.frame(
+  X = 10:20,
+  P_X_eq = dbinom(10:20, size = n_trials, prob = prob_success),
+  P_X_leq = pbinom(10:20, size = n_trials, prob = prob_success),
+  P_X_geq = 1 - pbinom(9:19, size = n_trials, prob = prob_success)
+)
+
+cat("\nTabel Probabilitas Teoritis untuk beberapa nilai:\n")
+print(kable(prob_table, digits = 6, 
+           col.names = c("X", "P(X=x)", "P(X≤x)", "P(X≥x)")))
+```
+
+
+## 4. Buatlah function untuk rumus berikut:
+
+\[
+s = \sqrt{ \frac{\sum x^2 - \frac{(\sum x)^2}{n}}{n - 1} }
+\]
+
+Hitung nilai $s$ dengan membangkitkan data berdistribusi normal sebanyak data 1000, rata-rata 89, dan standar deviasi 10.
+
+```{r}
+# Function untuk menghitung simpangan baku
+calculate_std_dev <- function(x) {
+  n <- length(x)
+  if(n <= 1) {
+    stop("Sampel harus memiliki lebih dari 1 observasi")
+  }
+  
+  # Hitung rata-rata
+  x_bar <- mean(x)
+  
+  # Hitung sum of squares
+  sum_squares <- sum((x - x_bar)^2)
+  
+  # Hitung simpangan baku sampel
+  s <- sqrt(sum_squares / (n - 1))
+  
+  return(s)
+}
+```
+
+```{r}
+# Parameter data
+n_data <- 1000
+mean_given <- 89
+sd_given <- 10
+
+# Generate data normal
+normal_data <- rnorm(n_data, mean = mean_given, sd = sd_given)
+
+# Hitung simpangan baku
+s_custom <- calculate_std_dev(normal_data)
+s_builtin <- sd(normal_data)
+
+# Statistik deskriptif
+mean_data <- mean(normal_data)
+median_data <- median(normal_data)
+var_data <- var(normal_data)
+```
+
+```{r}
+cat("HASIL ANALISIS DATA NORMAL (n=1000, μ=89, σ=10):\n")
+cat("Parameter teoritis: μ =", mean_given, ", σ =", sd_given, "\n\n")
+
+cat("STATISTIK SAMPEL:\n")
+cat("- Rata-rata    : ", round(mean_data, 4), "\n")
+cat("- Median       : ", round(median_data, 4), "\n")
+cat("- Varians      : ", round(var_data, 4), "\n\n")
+
+cat("PERBANDINGAN SIMPANGAN BAKU:\n")
+cat("- Function custom     : ", round(s_custom, 6), "\n")
+cat("- Function R built-in : ", round(s_builtin, 6), "\n")
+cat("- Selisih            : ", round(abs(s_custom - s_builtin), 10), "\n")
+cat("- Parameter teoritis  : ", sd_given, "\n")
+cat("- Validasi function   : ", ifelse(abs(s_custom - s_builtin) < 1e-10, "✓ BENAR", "✗ ERROR"), "\n")
+```
+HASIL ANALISIS DATA NORMAL (n=1000, μ=89, σ=10):
+Parameter teoritis: μ = 89 , σ = 10 
+
+STATISTIK SAMPEL:
+- Rata-rata    :  89.1855 
+- Median       :  89.1614 
+- Varians      :  101.3548 
+
+PERBANDINGAN SIMPANGAN BAKU:
+- Function custom     :  10.06751 
+- Function R built-in :  10.06751 
+- Selisih            :  0 
+- Parameter teoritis  :  10 
+- Validasi function   :  ✓ BENAR
+
+```{r}
+# Setup plot
+par(mfrow = c(2, 2))
+
+# 1. Histogram
+hist(normal_data, breaks = 40, 
+     main = "Histogram Data Normal",
+     xlab = "Nilai", ylab = "Frekuensi",
+     col = "deepskyblue2", border = "black")
+abline(v = mean_data, col = "red", lwd = 2)
+abline(v = mean_given, col = "blue", lwd = 2, lty = 2)
+legend("topright", 
+       legend = c(paste("x̄ =", round(mean_data, 2)), 
+                 paste("μ =", mean_given)),
+       col = c("red", "blue"), lty = c(1, 2), lwd = 2)
+
+# 2. Q-Q plot
+qqnorm(normal_data, main = "Q-Q Plot vs Normal")
+qqline(normal_data, col = "red")
+
+# 3. Box plot
+boxplot(normal_data, main = "Box Plot Data", 
+        ylab = "Nilai", col = "aquamarine2")
+
+# 4. Density plot
+plot(density(normal_data), main = "Kurva Densitas",
+     xlab = "Nilai", ylab = "Densitas", lwd = 2)
+curve(dnorm(x, mean = mean_given, sd = sd_given), 
+      add = TRUE, col = "red", lwd = 2, lty = 2)
+legend("topright", 
+       legend = c("Densitas Sampel", "Densitas Teoritis"),
+       col = c("black", "red"), lty = c(1, 2), lwd = 2)
+
+par(mfrow = c(1, 1))
+
+# Test normalitas
+shapiro_test <- shapiro.test(normal_data)
+cat("\nTEST NORMALITAS (Shapiro-Wilk):\n")
+cat("- W statistic  : ", round(shapiro_test$statistic, 6), "\n")
+cat("- p-value      : ", format(shapiro_test$p.value, scientific = TRUE), "\n")
+cat("- Kesimpulan   : ", ifelse(shapiro_test$p.value > 0.05, 
+                                "Data mengikuti distribusi normal (α = 0.05)", 
+                                "Data tidak mengikuti distribusi normal (α = 0.05)"), "\n")
+```
+Kesimpulan   :  Data mengikuti distribusi normal (α = 0.05) 
+
+## 5. Simulasi Antrian di Bank
+
+Sebuah bank memiliki **2 teller** dengan kondisi sebagai berikut:
+
+* **Nasabah datang rata-rata 5 orang per jam**, mengikuti **distribusi Poisson**
+* **Waktu pelayanan per nasabah** mengikuti **distribusi Eksponensial** dengan **rata-rata 8 menit**
+* **Jam operasional bank adalah 6 jam per hari**
+
+---
+
+### **Kerjakan tugas-tugas berikut:**
+
+**(a)** Buatlah **simulasi antrian selama 20 hari kerja**
+
+**(b)** Hitung **berapa lama rata-rata nasabah menunggu**
+
+**(c)** Hitung **berapa persen waktu teller sibuk bekerja**
+
+**(d)** Bandingkan jika bank **menambah 1 teller lagi** — apakah **lebih efisien?**
+
+**(e)** Buat **grafik yang menunjukkan panjang antrian sepanjang hari**
+
+```{r}
+# Simulasi Sistem Antrian Bank
+library(ggplot2)
+library(dplyr)
+library(knitr)
+
+# Set seed untuk reproducibility
+set.seed(123)
+
+# Parameter sistem antrian
+lambda_arrival <- 5/60  # 5 orang per jam = 5/60 per menit
+mu_service <- 1/8       # rata-rata 8 menit per pelayanan = 1/8 per menit
+bank_hours <- 6 * 60    # 6 jam = 360 menit
+num_days <- 20          # simulasi 20 hari kerja
+
+# Function untuk simulasi antrian satu hari
+simulate_bank_queue <- function(lambda, mu, total_time) {
+  # Generate waktu kedatangan (Poisson process)
+  arrival_times <- c()
+  current_time <- 0
+  
+  while(current_time < total_time) {
+    # Waktu antar kedatangan (Exponential dengan rate lambda)
+    inter_arrival <- rexp(1, lambda)
+    current_time <- current_time + inter_arrival
+    if(current_time <= total_time) {
+      arrival_times <- c(arrival_times, current_time)
+    }
+  }
+  
+  if(length(arrival_times) == 0) {
+    return(list(
+      num_customers = 0,
+      waiting_times = numeric(0),
+      service_times = numeric(0),
+      total_waiting_time = 0,
+      avg_waiting_time = 0,
+      max_queue_length = 0,
+      server_busy_time = 0,
+      utilization = 0
+    ))
+  }
+  
+  num_customers <- length(arrival_times)
+  
+  # Generate waktu pelayanan (Exponential dengan rate mu)
+  service_times <- rexp(num_customers, mu)
+  
+  # Simulasi proses antrian
+  departure_times <- numeric(num_customers)
+  waiting_times <- numeric(num_customers)
+  queue_lengths <- numeric(num_customers)
+  
+  # Nasabah pertama
+  departure_times[1] <- arrival_times[1] + service_times[1]
+  waiting_times[1] <- 0
+  queue_lengths[1] <- 1
+  
+  # Nasabah selanjutnya
+  for(i in 2:num_customers) {
+    # Waktu mulai dilayani = max(waktu datang, waktu selesai nasabah sebelumnya)
+    service_start <- max(arrival_times[i], departure_times[i-1])
+    waiting_times[i] <- max(0, departure_times[i-1] - arrival_times[i])
+    departure_times[i] <- service_start + service_times[i]
+    
+    # Hitung panjang antrian saat nasabah i datang
+    queue_lengths[i] <- sum(departure_times[1:(i-1)] > arrival_times[i]) + 1
+  }
+  
+  # Statistik hasil
+  total_waiting_time <- sum(waiting_times)
+  avg_waiting_time <- mean(waiting_times)
+  max_queue_length <- max(queue_lengths)
+  server_busy_time <- sum(service_times)
+  utilization <- server_busy_time / total_time * 100
+  
+  return(list(
+    num_customers = num_customers,
+    arrival_times = arrival_times,
+    service_times = service_times,
+    waiting_times = waiting_times,
+    departure_times = departure_times,
+    queue_lengths = queue_lengths,
+    total_waiting_time = total_waiting_time,
+    avg_waiting_time = avg_waiting_time,
+    max_queue_length = max_queue_length,
+    server_busy_time = server_busy_time,
+    utilization = utilization
+  ))
+}
+
+# (a) Simulasi antrian selama 20 hari kerja
+cat("=== SIMULASI ANTRIAN BANK SELAMA 20 HARI ===\n\n")
+
+# Inisialisasi hasil simulasi
+daily_results <- list()
+summary_stats <- data.frame(
+  Hari = 1:num_days,
+  Jumlah_Nasabah = numeric(num_days),
+  Rata_Rata_Menunggu = numeric(num_days),
+  Waktu_Menunggu_Total = numeric(num_days),
+  Panjang_Antrian_Max = numeric(num_days),
+  Utilisasi_Teller = numeric(num_days)
+)
+
+# Jalankan simulasi untuk setiap hari
+for(day in 1:num_days) {
+  result <- simulate_bank_queue(lambda_arrival, mu_service, bank_hours)
+  daily_results[[day]] <- result
+  
+  summary_stats[day, "Jumlah_Nasabah"] <- result$num_customers
+  summary_stats[day, "Rata_Rata_Menunggu"] <- result$avg_waiting_time
+  summary_stats[day, "Waktu_Menunggu_Total"] <- result$total_waiting_time
+  summary_stats[day, "Panjang_Antrian_Max"] <- result$max_queue_length
+  summary_stats[day, "Utilisasi_Teller"] <- result$utilization
+}
+
+# Tampilkan tabel hasil harian
+cat("Tabel Hasil Simulasi Harian:\n")
+print(kable(summary_stats, digits = 2, 
+           col.names = c("Hari", "Jml Nasabah", "Rata² Tunggu (mnt)", 
+                        "Total Tunggu (mnt)", "Max Antrian", "Utilisasi (%)")))
+
+# (b) Rata-rata lama nasabah menunggu
+overall_waiting_times <- unlist(lapply(daily_results, function(x) x$waiting_times))
+avg_waiting_overall <- mean(overall_waiting_times)
+
+cat("\n=== ANALISIS WAKTU MENUNGGU ===\n")
+cat("Rata-rata lama nasabah menunggu:", round(avg_waiting_overall, 2), "menit\n")
+cat("Median waktu menunggu:", round(median(overall_waiting_times), 2), "menit\n")
+cat("Std deviasi waktu menunggu:", round(sd(overall_waiting_times), 2), "menit\n")
+cat("Waktu menunggu maksimum:", round(max(overall_waiting_times), 2), "menit\n")
+
+# (c) Persentase waktu teller sibuk bekerja
+avg_utilization <- mean(summary_stats$Utilisasi_Teller)
+cat("\n=== ANALISIS UTILISASI TELLER ===\n")
+cat("Rata-rata persentase waktu teller sibuk:", round(avg_utilization, 2), "%\n")
+cat("Utilisasi minimum:", round(min(summary_stats$Utilisasi_Teller), 2), "%\n")
+cat("Utilisasi maksimum:", round(max(summary_stats$Utilisasi_Teller), 2), "%\n")
+
+# (d) Perbandingan efisiensi 1 vs 2 teller
+cat("\n=== PERBANDINGAN 1 TELLER vs 2 TELLER ===\n")
+
+# Simulasi dengan 2 teller (simplified model)
+simulate_two_tellers <- function(lambda, mu, total_time) {
+  # Generate kedatangan
+  arrival_times <- c()
+  current_time <- 0
+  
+  while(current_time < total_time) {
+    inter_arrival <- rexp(1, lambda)
+    current_time <- current_time + inter_arrival
+    if(current_time <= total_time) {
+      arrival_times <- c(arrival_times, current_time)
+    }
+  }
+  
+  if(length(arrival_times) == 0) {
+    return(list(avg_waiting_time = 0, utilization = 0))
+  }
+  
+  num_customers <- length(arrival_times)
+  service_times <- rexp(num_customers, mu)
+  
+  # Simulasi 2 teller (pilih yang lebih cepat selesai)
+  teller1_free <- 0
+  teller2_free <- 0
+  waiting_times <- numeric(num_customers)
+  
+  for(i in 1:num_customers) {
+    # Pilih teller yang lebih cepat tersedia
+    if(teller1_free <= teller2_free) {
+      waiting_times[i] <- max(0, teller1_free - arrival_times[i])
+      teller1_free <- max(arrival_times[i], teller1_free) + service_times[i]
+    } else {
+      waiting_times[i] <- max(0, teller2_free - arrival_times[i])
+      teller2_free <- max(arrival_times[i], teller2_free) + service_times[i]
+    }
+  }
+  
+  total_service_time <- sum(service_times)
+  utilization <- (total_service_time / 2) / total_time * 100  # 2 teller
+  
+  return(list(
+    avg_waiting_time = mean(waiting_times),
+    utilization = utilization
+  ))
+}
+
+# Simulasi perbandingan
+comparison_results <- data.frame(
+  Skenario = c("1 Teller", "2 Teller"),
+  Rata_Tunggu = numeric(2),
+  Utilisasi = numeric(2)
+)
+
+# 1 Teller (dari hasil sebelumnya)
+comparison_results[1, "Rata_Tunggu"] <- avg_waiting_overall
+comparison_results[1, "Utilisasi"] <- avg_utilization
+
+# 2 Teller
+two_teller_results <- replicate(num_days, 
+  simulate_two_tellers(lambda_arrival, mu_service, bank_hours), 
+  simplify = FALSE)
+
+avg_wait_2teller <- mean(sapply(two_teller_results, function(x) x$avg_waiting_time))
+avg_util_2teller <- mean(sapply(two_teller_results, function(x) x$utilization))
+
+comparison_results[2, "Rata_Tunggu"] <- avg_wait_2teller
+comparison_results[2, "Utilisasi"] <- avg_util_2teller
+
+print(kable(comparison_results, digits = 2,
+           col.names = c("Skenario", "Rata² Tunggu (menit)", "Utilisasi (%)")))
+
+# Analisis efisiensi
+improvement_wait <- (avg_waiting_overall - avg_wait_2teller) / avg_waiting_overall * 100
+cat("\nPerbaikan waktu tunggu dengan 2 teller:", round(improvement_wait, 1), "%\n")
+
+if(improvement_wait > 30) {
+  cat("Rekomendasi: Menambah 1 teller akan SANGAT EFISIEN\n")
+} else if(improvement_wait > 15) {
+  cat("Rekomendasi: Menambah 1 teller cukup efisien\n")
+} else {
+  cat("Rekomendasi: Menambah teller mungkin tidak terlalu diperlukan\n")
+}
+
+# (e) Grafik panjang antrian sepanjang hari
+cat("\n=== VISUALISASI HASIL SIMULASI ===\n")
+
+# Pilih hari dengan aktivitas tinggi untuk visualisasi
+busy_day <- which.max(summary_stats$Jumlah_Nasabah)
+busy_day_data <- daily_results[[busy_day]]
+
+# Plot 1: Histogram waktu menunggu
+par(mfrow = c(2, 2))
+
+hist(overall_waiting_times, breaks = 30, 
+     main = "Distribusi Waktu Menunggu (20 hari)",
+     xlab = "Waktu Menunggu (menit)", ylab = "Frekuensi",
+     col = "violet", border = "black")
+abline(v = avg_waiting_overall, col = "red", lwd = 2)
+legend("topright", legend = paste("Rata-rata =", round(avg_waiting_overall, 2)), 
+       col = "red", lwd = 2)
+
+# Plot 2: Utilisasi teller per hari
+plot(1:num_days, summary_stats$Utilisasi_Teller, 
+     type = "b", pch = 19, col = "blue",
+     main = "Utilisasi Teller per Hari",
+     xlab = "Hari", ylab = "Utilisasi (%)",
+     ylim = c(0, 100))
+abline(h = avg_utilization, col = "red", lty = 2)
+legend("topright", legend = paste("Rata-rata =", round(avg_utilization, 1), "%"), 
+       col = "red", lty = 2)
+
+# Plot 3: Jumlah nasabah per hari
+barplot(summary_stats$Jumlah_Nasabah, 
+        names.arg = 1:num_days,
+        main = "Jumlah Nasabah per Hari",
+        xlab = "Hari", ylab = "Jumlah Nasabah",
+        col = "brown2", border = "black")
+
+# Plot 4: Perbandingan 1 vs 2 teller
+barplot(comparison_results$Rata_Tunggu, 
+        names.arg = comparison_results$Skenario,
+        main = "Perbandingan Waktu Tunggu",
+        ylab = "Rata-rata Waktu Tunggu (menit)",
+        col = c("red", "darkkhaki"), border = "black")
+
+par(mfrow = c(1, 1))
+
+# Analisis teoritis vs simulasi
+cat("\n=== PERBANDINGAN TEORITIS vs SIMULASI ===\n")
+
+# Teori antrian M/M/1
+rho_theory <- lambda_arrival / mu_service  # Traffic intensity
+avg_customers_theory <- rho_theory / (1 - rho_theory)  # L
+avg_wait_theory <- rho_theory / (mu_service * (1 - rho_theory))  # Wq
+
+cat("Traffic Intensity (ρ):", round(rho_theory, 3), "\n")
+cat("Rata-rata jumlah nasabah dalam sistem (teoritis):", round(avg_customers_theory, 2), "\n")
+cat("Rata-rata waktu menunggu (teoritis):", round(avg_wait_theory, 2), "menit\n")
+cat("Rata-rata waktu menunggu (simulasi):", round(avg_waiting_overall, 2), "menit\n")
+cat("Selisih teoritis vs simulasi:", round(abs(avg_wait_theory - avg_waiting_overall), 2), "menit\n")
+
+if(rho_theory >= 0.9) {
+  cat("\nPERINGATAN: Sistem mendekati tidak stabil (ρ ≥ 0.9)\n")
+} else if(rho_theory >= 0.7) {
+  cat("\nSistem cukup sibuk (ρ ≥ 0.7) - pertimbangkan menambah teller\n")
+} else {
+  cat("\nSistem dalam kondisi normal (ρ < 0.7)\n")
+}
+
+# Summary dan rekomendasi
+cat("\n" %+% rep("=", 60) %+% "\n")
+cat("RINGKASAN dan REKOMENDASI:\n")
+cat(rep("=", 60) %+% "\n\n")
+
+cat("1. KONDISI SAAT INI (1 Teller):\n")
+cat("   - Rata-rata", round(mean(summary_stats$Jumlah_Nasabah), 1), "nasabah per hari\n")
+cat("   - Waktu tunggu rata-rata:", round(avg_waiting_overall, 1), "menit\n")
+cat("   - Utilisasi teller:", round(avg_utilization, 1), "%\n\n")
+
+cat("2. DENGAN 2 TELLER:\n")
+cat("   - Waktu tunggu akan berkurang", round(improvement_wait, 1), "%\n")
+cat("   - Utilisasi per teller akan lebih optimal\n\n")
+
+cat("3. REKOMENDASI OPERASIONAL:\n")
+if(avg_waiting_overall > 10) {
+  cat("   - Pertimbangkan menambah 1 teller (waktu tunggu > 10 menit)\n")
+}
+if(avg_utilization > 80) {
+  cat("   - Teller sangat sibuk, risiko kelelahan tinggi\n")
+}
+if(max(summary_stats$Panjang_Antrian_Max) > 5) {
+  cat("   - Antrian panjang dapat mengurangi kepuasan nasabah\n")
+}
+cat("   - Monitor jam sibuk untuk penjadwalan staff yang optimal\n")
+```
+
+---
+=== SIMULASI ANTRIAN BANK SELAMA 20 HARI ===
+
+Tabel Hasil Simulasi Harian:
+
+=== ANALISIS WAKTU MENUNGGU ===
+Rata-rata lama nasabah menunggu: 12.68 menit
+Median waktu menunggu: 4.99 menit
+Std deviasi waktu menunggu: 16.63 menit
+Waktu menunggu maksimum: 80.83 menit
+
+=== ANALISIS UTILISASI TELLER ===
+Rata-rata persentase waktu teller sibuk: 71.04 %
+Utilisasi minimum: 30 %
+Utilisasi maksimum: 104.05 %
+
+=== PERBANDINGAN 1 TELLER vs 2 TELLER ===
+
+Perbaikan waktu tunggu dengan 2 teller: 93.2 %
+Rekomendasi: Menambah 1 teller akan SANGAT EFISIEN
+
+=== VISUALISASI HASIL SIMULASI ===
+
+=== PERBANDINGAN TEORITIS vs SIMULASI ===
+Traffic Intensity (ρ): 0.667 
+Rata-rata jumlah nasabah dalam sistem (teoritis): 2 
+Rata-rata waktu menunggu (teoritis): 16 menit
+Rata-rata waktu menunggu (simulasi): 12.68 menit
+Selisih teoritis vs simulasi: 3.32 menit
+
+   
+## 6. Analisis Simulasi Toko Kelontong Bu Sari
+Bu Sari memiliki toko kelontong yang menjual beras dengan kondisi sebagai berikut:
+
+* Penjualan beras per hari: 8-15 karung (distribusi Uniform)
+* Stok awal: 100 karung
+* Setiap 5 hari sekali: Bu Sari pesan ulang 50 karung beras
+* Jika stok habis: kehilangan untung Rp50.000 per karung
+
+```{r}
+# Load required libraries
+library(ggplot2)
+library(dplyr)
+library(knitr)
+library(gridExtra)
+
+# Set seed untuk reproducibility
+set.seed(123)
+```
+
+```{r}
+# Parameter simulasi
+initial_stock <- 100
+order_quantity <- 50
+order_interval <- 5
+loss_per_karung <- 50000
+simulation_days <- 60
+
+# Fungsi simulasi
+simulate_store <- function(days = 60) {
+  # Inisialisasi
+  stock <- initial_stock
+  daily_demand <- runif(days, min = 8, max = 15)
+  daily_sales <- numeric(days)
+  daily_stock <- numeric(days)
+  daily_shortage <- numeric(days)
+  daily_loss <- numeric(days)
+  order_days <- seq(5, days, by = 5)
+  
+  for (day in 1:days) {
+    # Cek apakah hari pemesanan
+    if (day %in% order_days) {
+      stock <- stock + order_quantity
+    }
+    
+    # Permintaan hari ini
+    demand <- daily_demand[day]
+    
+    # Penjualan aktual
+    if (stock >= demand) {
+      sales <- demand
+      shortage <- 0
+    } else {
+      sales <- stock
+      shortage <- demand - stock
+    }
+    
+    # Update stok
+    stock <- stock - sales
+    
+    # Simpan data
+    daily_sales[day] <- sales
+    daily_stock[day] <- stock
+    daily_shortage[day] <- shortage
+    daily_loss[day] <- shortage * loss_per_karung
+  }
+  
+  return(data.frame(
+    day = 1:days,
+    demand = daily_demand,
+    sales = daily_sales,
+    stock = daily_stock,
+    shortage = daily_shortage,
+    loss = daily_loss
+  ))
+}
+
+# Jalankan simulasi
+simulation_result <- simulate_store(60)
+
+# Debug: cek apakah data frame terbuat dengan benar
+cat("Dimensi data frame:", dim(simulation_result), "\n")
+cat("Nama kolom:", names(simulation_result), "\n")
+cat("Beberapa baris pertama:\n")
+
+# Tampilkan 10 hari pertama dengan format yang lebih jelas
+cat("=== HASIL SIMULASI 10 HARI PERTAMA ===\n")
+for(i in 1:min(10, nrow(simulation_result))) {
+  cat(sprintf("Hari %2d: Permintaan=%.1f, Penjualan=%.1f, Stok=%.1f, Kekurangan=%.1f, Kerugian=Rp%.0f\n",
+              simulation_result$day[i],
+              simulation_result$demand[i],
+              simulation_result$sales[i],
+              simulation_result$stock[i],
+              simulation_result$shortage[i],
+              simulation_result$loss[i]))
+}
+```
+
+**a. Simulasi Stok Beras Selama 60 Hari**
+```{r}
+# Grafik stok beras selama 60 hari
+cat("\n=== MEMBUAT GRAFIK STOK ===\n")
+p1 <- ggplot(simulation_result, aes(x = day, y = stock)) +
+  geom_line(color = "darkseagreen", size = 1) +
+  geom_point(color = "red", size = 0.8) +
+  geom_vline(xintercept = seq(5, 60, by = 5), linetype = "dashed", alpha = 0.5, color = "cyan2") +
+  labs(title = "Simulasi Stok Beras Selama 60 Hari",
+       x = "Hari",
+       y = "Stok (karung)",
+       subtitle = "Garis hijau menunjukkan hari pemesanan") +
+  theme_minimal()
+
+print(p1)
+
+# Statistik deskriptif stok
+cat("\n=== STATISTIK STOK ===\n")
+stock_stats <- summary(simulation_result$stock)
+print(stock_stats)
+cat("Stok minimum:", min(simulation_result$stock), "karung\n")
+cat("Stok maksimum:", max(simulation_result$stock), "karung\n")
+cat("Stok rata-rata:", round(mean(simulation_result$stock), 2), "karung\n")
+```
+
+=== MEMBUAT GRAFIK STOK ===
+
+=== STATISTIK STOK ===
+
+   Min. 1st Qu.  Median    Mean 3rd Qu.    Max. 
+   0.00   16.45   33.45   34.85   51.79   90.96 
+   
+* Stok minimum: 0 karung
+* Stok maksimum: 90.96093 karung
+* Stok rata-rata: 34.85 karung
+
+**b.  Hitung Berapa Kali Toko Kehabisan Stok**
+```{r}
+# Hitung berapa kali kehabisan stok
+shortage_days <- sum(simulation_result$shortage > 0)
+shortage_events <- rle(simulation_result$shortage > 0)
+shortage_periods <- sum(shortage_events$values)
+
+cat("\n=== ANALISIS KEHABISAN STOK ===\n")
+cat("Jumlah hari kehabisan stok:", shortage_days, "hari\n")
+cat("Jumlah periode kehabisan stok:", shortage_periods, "periode\n")
+cat("Persentase hari kehabisan stok:", round(shortage_days/60*100, 1), "%\n")
+
+# Detail hari-hari kehabisan stok
+shortage_details <- simulation_result[simulation_result$shortage > 0, ]
+if(nrow(shortage_details) > 0) {
+  cat("\n=== DETAIL HARI-HARI KEHABISAN STOK ===\n")
+  for(i in 1:nrow(shortage_details)) {
+    cat(sprintf("Hari %2d: Permintaan=%.1f, Kekurangan=%.1f, Kerugian=Rp%.0f\n",
+                shortage_details$day[i],
+                shortage_details$demand[i],
+                shortage_details$shortage[i],
+                shortage_details$loss[i]))
+  }
+} else {
+  cat("Tidak ada hari kehabisan stok dalam simulasi ini.\n")
+}
+```
+
+**c.  Coba Berbagai Strategi: Pesan 40, 50, atau 60 Karung**
+```{r}
+# Fungsi untuk menguji strategi berbeda
+test_strategy <- function(order_qty, days = 60) {
+  stock <- initial_stock
+  daily_demand <- runif(days, min = 8, max = 15)
+  total_shortage <- 0
+  total_loss <- 0
+  shortage_days <- 0
+  
+  for (day in 1:days) {
+    if (day %% 5 == 0) {
+      stock <- stock + order_qty
+    }
+    
+    demand <- daily_demand[day]
+    
+    if (stock >= demand) {
+      stock <- stock - demand
+    } else {
+      shortage <- demand - stock
+      total_shortage <- total_shortage + shortage
+      total_loss <- total_loss + (shortage * loss_per_karung)
+      shortage_days <- shortage_days + 1
+      stock <- 0
+    }
+  }
+  
+  return(list(
+    order_quantity = order_qty,
+    total_shortage = total_shortage,
+    total_loss = total_loss,
+    shortage_days = shortage_days,
+    avg_shortage_per_day = total_shortage / days
+  ))
+}
+
+# Test berbagai strategi
+strategies <- c(40, 50, 60)
+strategy_results <- lapply(strategies, test_strategy)
+
+# Buat dataframe untuk perbandingan
+strategy_df <- data.frame(
+  Strategi = paste0("Pesan_", strategies, "_karung"),
+  Total_Kekurangan = sapply(strategy_results, function(x) round(x$total_shortage, 2)),
+  Hari_Kehabisan = sapply(strategy_results, function(x) x$shortage_days),
+  Total_Kerugian = sapply(strategy_results, function(x) x$total_loss),
+  Rata2_Kekurangan = sapply(strategy_results, function(x) round(x$avg_shortage_per_day, 2))
+)
+
+# Visualisasi perbandingan strategi
+p2 <- ggplot(strategy_df, aes(x = Strategi, y = Total_Kerugian)) +
+  geom_col(fill = "darkslategray2", alpha = 0.7) +
+  geom_text(aes(label = paste0("Rp ", format(Total_Kerugian, big.mark = ","))), 
+            vjust = -0.5) +
+  labs(title = "Perbandingan Total Kerugian per Strategi",
+       x = "Strategi Pemesanan",
+       y = "Total Kerugian (Rp)") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+print(p2)
+```
+
+
+=== PERBANDINGAN STRATEGI PEMESANAN ===
+
+* Pesan_40_karung: Kekurangan=130.0 karung, Hari kehabisan=18, Kerugian=Rp6,500,192
+* Pesan_50_karung: Kekurangan=28.0 karung, Hari kehabisan=5, Kerugian=Rp1,398,323
+* Pesan_60_karung: Kekurangan=0.0 karung, Hari kehabisan=0, Kerugian=Rp0
+
+**d. Coba Ubah Frekuensi Pesan: Setiap 3, 5, atau 7 Hari**
+```{r}
+# Fungsi untuk menguji frekuensi pemesanan berbeda
+test_frequency <- function(order_interval, days = 60) {
+  stock <- initial_stock
+  daily_demand <- runif(days, min = 8, max = 15)
+  total_shortage <- 0
+  total_loss <- 0
+  shortage_days <- 0
+  total_orders <- 0
+  
+  for (day in 1:days) {
+    if (day %% order_interval == 0) {
+      stock <- stock + order_quantity
+      total_orders <- total_orders + 1
+    }
+    
+    demand <- daily_demand[day]
+    
+    if (stock >= demand) {
+      stock <- stock - demand
+    } else {
+      shortage <- demand - stock
+      total_shortage <- total_shortage + shortage
+      total_loss <- total_loss + (shortage * loss_per_karung)
+      shortage_days <- shortage_days + 1
+      stock <- 0
+    }
+  }
+  
+  return(list(
+    order_interval = order_interval,
+    total_orders = total_orders,
+    total_shortage = total_shortage,
+    total_loss = total_loss,
+    shortage_days = shortage_days
+  ))
+}
+
+# Test berbagai frekuensi
+frequencies <- c(3, 5, 7)
+frequency_results <- lapply(frequencies, test_frequency)
+
+# Buat dataframe untuk perbandingan
+frequency_df <- data.frame(
+  Frekuensi = paste0("Setiap_", frequencies, "_hari"),
+  Total_Pemesanan = sapply(frequency_results, function(x) x$total_orders),
+  Hari_Kehabisan = sapply(frequency_results, function(x) x$shortage_days),
+  Total_Kerugian = sapply(frequency_results, function(x) x$total_loss),
+  Total_Kekurangan = sapply(frequency_results, function(x) round(x$total_shortage, 2))
+)
+
+# Visualisasi perbandingan frekuensi
+p3 <- ggplot(frequency_df, aes(x = Frekuensi, y = Total_Kerugian)) +
+  geom_col(fill = "aquamarine2", alpha = 0.7) +
+  geom_text(aes(label = paste0("Rp ", format(Total_Kerugian, big.mark = ","))), 
+            vjust = -0.5) +
+  labs(title = "Perbandingan Total Kerugian per Frekuensi Pemesanan",
+       x = "Frekuensi Pemesanan",
+       y = "Total Kerugian (Rp)") +
+  theme_minimal()
+
+print(p3)
+```
+=== PERBANDINGAN FREKUENSI PEMESANAN ===
+
+* Setiap_3_hari: Pemesanan=20 kali, Hari kehabisan=0, Kerugian=Rp0
+* Setiap_5_hari: Pemesanan=12 kali, Hari kehabisan=3, Kerugian=Rp1,175,752
+* Setiap_7_hari: Pemesanan=8 kali, Hari kehabisan=24, Kerugian=Rp10,565,500
+
+**e. Grafik Pergerakan Stok dan Rekomendasi untuk Bu Sari**
+```{r}
+# Grafik komprehensif pergerakan stok
+p4 <- ggplot(simulation_result, aes(x = day)) +
+  geom_line(aes(y = stock, color = "Stok"), size = 1) +
+  geom_line(aes(y = demand, color = "Permintaan"), size = 0.8) +
+  geom_point(data = simulation_result[simulation_result$shortage > 0, ], 
+             aes(y = 0), color = "red", size = 2, shape = 17) +
+  geom_vline(xintercept = seq(5, 60, by = 5), linetype = "dashed", alpha = 0.3) +
+  scale_color_manual(values = c("Stok" = "blue", "Permintaan" = "orange")) +
+  labs(title = "Pergerakan Stok vs Permintaan Selama 60 Hari",
+       x = "Hari",
+       y = "Jumlah (karung)",
+       color = "Legenda",
+       subtitle = "Segitiga merah = hari kehabisan stok, garis vertikal = hari pemesanan") +
+  theme_minimal() +
+  theme(legend.position = "bottom")
+
+print(p4)
+
+# Summary statistics
+total_loss_original <- sum(simulation_result$loss)
+total_shortage_original <- sum(simulation_result$shortage)
+```
+
+
+=== RINGKASAN HASIL SIMULASI ===
+
+Strategi saat ini (pesan 50 karung setiap 5 hari):
+
+* Total kerugian: Rp 1,585,617 
+* Total kekurangan:  31.71  karung
+* Hari kehabisan stok:  6  hari dari 60 hari
+
+=== REKOMENDASI UNTUK BU SARI ===
+
+Berdasarkan analisis simulasi:
+
+STRATEGI JUMLAH PEMESANAN:
+
+   Strategi terbaik: Pesan 60 karung
+   Alasan: Menghasilkan kerugian terendah
+
+STRATEGI FREKUENSI PEMESANAN:
+
+   Frekuensi terbaik: Setiap 3 hari
+   Alasan: Meminimalkan risiko kehabisan stok
+
+KESIMPULAN:
+
+   - Permintaan harian bervariasi 8-15 karung dengan rata-rata ~11.5 karung
+   - Stok awal 100 karung cukup baik untuk buffer
+   - Perlu monitoring ketat menjelang hari pemesanan
+   - Pertimbangkan sistem peringatan ketika stok < 20 karung
+   
+   
